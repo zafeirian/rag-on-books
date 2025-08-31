@@ -12,7 +12,7 @@ import glob
 DATA_PATH = "data/books/"
 CHROMA_PATH = "chroma"
 load_dotenv()
-embedding_function = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
+embedding_function = OpenAIEmbeddings(model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY"))
 
 def load_documents():
     all_docs = []
@@ -42,7 +42,6 @@ def create_vdb(chunks: list[Document], embedding_function = embedding_function):
     db = Chroma.from_documents(
             documents=chunks, embedding=embedding_function, persist_directory=CHROMA_PATH
         )
-    db.persist()
     print(f"Saves {len(chunks)} chunks into a VDB.")
 
 def generate_vdb():
