@@ -12,7 +12,7 @@ import glob
 DATA_PATH = "data/books/"
 CHROMA_PATH = "chroma"
 load_dotenv()
-embedding_function = OpenAIEmbeddings(model='gpt-4o-mini', api_key=os.getenv("OPENAI_API_KEY"))
+embedding_function = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
 
 def load_documents():
     all_docs = []
