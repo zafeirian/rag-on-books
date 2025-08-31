@@ -12,7 +12,7 @@ import glob
 DATA_PATH = "data/books/"
 CHROMA_PATH = "chroma"
 load_dotenv()
-embedding_function = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
+embedding_function = OpenAIEmbeddings(model='gpt-4o-mini', api_key=os.getenv("OPENAI_API_KEY"))
 
 def load_documents():
     all_docs = []
@@ -22,7 +22,7 @@ def load_documents():
         for doc in documents:
             doc.page_content = re.sub(r"\s+", " ", doc.page_content).strip()
         all_docs.extend(documents)
-    return documents
+    return all_docs
 
 def split_into_chunks(documents: list[Document]):
     text_splitter = RecursiveCharacterTextSplitter(
@@ -47,8 +47,8 @@ def create_vdb(chunks: list[Document], embedding_function = embedding_function):
 
 def generate_vdb():
     documents = load_documents()
-    #chunks = split_into_chunks(documents)
-    #create_vdb(chunks)
+    chunks = split_into_chunks(documents)
+    create_vdb(chunks)
 
 if __name__ == "__main__":
     generate_vdb()
