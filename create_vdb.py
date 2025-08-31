@@ -7,19 +7,21 @@ from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from langchain_openai.embeddings import OpenAIEmbeddings
 import shutil
+import glob
 
 DATA_PATH = "data/books/"
 CHROMA_PATH = "chroma"
 load_dotenv()
 embedding_function = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
 
-
-
 def load_documents():
-    loader = PyPDFLoader(DATA_PATH + "the-hobbit.pdf")
-    documents = loader.load()
-    for doc in documents:
-        doc.page_content = re.sub(r"\s+", " ", doc.page_content).strip()
+    all_docs = []
+    for pdf_file in glob.glob(DATA_PATH + "*.pdf"):
+        loader = PyPDFLoader(pdf_file)
+        documents = loader.load()
+        for doc in documents:
+            doc.page_content = re.sub(r"\s+", " ", doc.page_content).strip()
+        all_docs.extend(documents)
     return documents
 
 def split_into_chunks(documents: list[Document]):
@@ -45,8 +47,8 @@ def create_vdb(chunks: list[Document], embedding_function = embedding_function):
 
 def generate_vdb():
     documents = load_documents()
-    chunks = split_into_chunks(documents)
-    create_vdb(chunks)
+    #chunks = split_into_chunks(documents)
+    #create_vdb(chunks)
 
 if __name__ == "__main__":
     generate_vdb()
