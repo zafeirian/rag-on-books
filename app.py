@@ -9,7 +9,7 @@ from langchain.prompts import ChatPromptTemplate
 from contextlib import asynccontextmanager # for lifespan events
 #We need to load the VDB when the application begins and use it for every request (lifespan).
 
-EMBED_MODEL = 'gpt-embedding-3-small'
+EMBED_MODEL = 'text-embedding-3-small'
 CHROMA_PATH = 'chroma'
 LLM_MODEL = 'gpt-4o-mini'
 PROMPT_TEMPLATE = '''
@@ -68,7 +68,7 @@ class Chunk(BaseModel):
     source: Optional[str] = None
     page: Optional[int] = None
 
-class QueryRespone(BaseModel):
+class QueryResponse(BaseModel):
     response: str
     sources: list[dict]
 
@@ -78,14 +78,14 @@ app = FastAPI(title="Simple RAG on LOTR books.", lifespan=lifespan)
 def health():
     return {"ok": True}
 
-@app.post("/ask", response_model=QueryRespone)
+@app.post("/ask", response_model=QueryResponse)
 async def ask(req: QueryRequest):
     db: Chroma = app.state.db
     llm: ChatOpenAI = app.state.llm
 
     try:
         results = db.similarity_search_with_relevance_scores(query=req.text, k=req.k)
-        if len(results)==0 or results[0][1]<0.25:
+        if len(results)==0 or results[0][1]<0.15:
             return {"Error": "Unable to find relevant content."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -99,7 +99,7 @@ async def ask(req: QueryRequest):
     response_text = await llm.ainvoke(prompt)
     sources = [{"source": chunk.source, "page": chunk.page} for chunk in chunks]
 
-    return QueryRespone(response=response_text, sources=sources)
+    return QueryResponse(response=response_text.content, sources=sources)
 
     
 
