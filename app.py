@@ -22,6 +22,7 @@ Answer the question based ONLY on the following context:
 Answer the question based on the above context: {query}
 '''
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_dotenv()
@@ -69,7 +70,7 @@ class Chunk(BaseModel):
 
 class QueryRespone(BaseModel):
     response: str
-    sources: list[str]
+    sources: list[dict]
 
 app = FastAPI(title="Simple RAG on LOTR books.", lifespan=lifespan)
 
@@ -77,18 +78,29 @@ app = FastAPI(title="Simple RAG on LOTR books.", lifespan=lifespan)
 def health():
     return {"ok": True}
 
-@app.post("/query", response_model=QueryRespone)
-def query(req: QueryRequest):
+@app.post("/ask", response_model=QueryRespone)
+async def ask(req: QueryRequest):
     db: Chroma = app.state.db
+    llm: ChatOpenAI = app.state.llm
 
-    results = db.similarity_search_with_relevance_scores(query=QueryRequest.text, k=QueryRequest.k)
-    if len(results)==0 or results[0][1]<0.25:
-        return {"Error": "Unable to find relevant content."}
+    try:
+        results = db.similarity_search_with_relevance_scores(query=req.text, k=req.k)
+        if len(results)==0 or results[0][1]<0.25:
+            return {"Error": "Unable to find relevant content."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
-    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context_text, query=QueryRequest.text)
+    chunks = [Chunk(content=doc.page_content, score=_score, source=doc.metadata['source'], page=doc.metadata['page']) for doc, _score in results]
 
-    llm = ChatOpenAI()
+    context_text = "\n\n---\n\n".join([chunk.content for chunk in chunks])
+    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+    prompt = prompt_template.format(context=context_text, query=req.text)
+
+    response_text = await llm.ainvoke(prompt)
+    sources = [{"source": chunk.source, "page": chunk.page} for chunk in chunks]
+
+    return QueryRespone(response=response_text, sources=sources)
+
+    
 
     
