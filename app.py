@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional, List
 from dotenv import load_dotenv
 import os
 from langchain_openai import OpenAIEmbeddings
@@ -9,7 +10,7 @@ from langchain_chroma import Chroma
 from contextlib import asynccontextmanager # for lifespan events
 #We need to load the VDB when the application begins and use it for every request (lifespan).
 
-EMBED_MODEL = 'text=-embedding-3-small'
+EMBED_MODEL = 'gpt-embedding-3-small'
 CHROMA_PATH = 'chroma'
 
 @asynccontextmanager
@@ -22,8 +23,6 @@ async def lifespan(app: FastAPI):
     embedding_function = OpenAIEmbeddings(
         model=EMBED_MODEL,
         api_key=api_key,
-        chunk_size=64,
-        show_progress_bar=False
     )
 
     db = Chroma(
@@ -41,11 +40,28 @@ async def lifespan(app: FastAPI):
         app.state.embedding_function = None
 
 
-app = FastAPI(title="Simple RAG on LOTR books.")
+class QueryRequest(BaseModel):
+    text: str
+    k: int = 3
+
+class Chunk(BaseModel):
+    content: str
+    score: Optional[float] = None
+    source: Optional[str] = None
+    page: Optional[int] = None
+
+class QueryRespone(BaseModel):
+    response: str
+    sources: list[str]
+
+app = FastAPI(title="Simple RAG on LOTR books.", lifespan=lifespan)
 
 @app.get("health")
 def health():
     return {"ok": True}
 
+@app.post("/query", response_model=QueryRespone)
+def query(req: QueryRequest):
+    db: 
 
-@app.on_event()
+    results = 
