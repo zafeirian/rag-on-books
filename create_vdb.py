@@ -12,7 +12,12 @@ import glob
 DATA_PATH = "data/books/"
 CHROMA_PATH = "chroma"
 load_dotenv()
-embedding_function = OpenAIEmbeddings(model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY"))
+embedding_function = OpenAIEmbeddings(
+        model="text-embedding-3-small", 
+        api_key=os.getenv("OPENAI_API_KEY"),
+        chunk_size=64,
+        show_progress_bar=True
+        )
 
 def main():
     generate_vdb()
@@ -29,8 +34,8 @@ def load_documents():
 
 def split_into_chunks(documents: list[Document]):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=500,
+        chunk_size=1500,
+        chunk_overlap=250,
         length_function=len,
         add_start_index=True
     )
@@ -45,7 +50,7 @@ def create_vdb(chunks: list[Document], embedding_function = embedding_function):
     db = Chroma.from_documents(
             documents=chunks, embedding=embedding_function, persist_directory=CHROMA_PATH
         )
-    print(f"Saves {len(chunks)} chunks into a VDB.")
+    print(f"Saved {len(chunks)} chunks into a VDB.")
 
 def generate_vdb():
     documents = load_documents()
