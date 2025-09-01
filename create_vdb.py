@@ -14,6 +14,9 @@ CHROMA_PATH = "chroma"
 load_dotenv()
 embedding_function = OpenAIEmbeddings(model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY"))
 
+def main():
+    generate_vdb()
+
 def load_documents():
     all_docs = []
     for pdf_file in glob.glob(DATA_PATH + "*.pdf"):
@@ -50,4 +53,4 @@ def generate_vdb():
     create_vdb(chunks)
 
 if __name__ == "__main__":
-    generate_vdb()
+    main()
